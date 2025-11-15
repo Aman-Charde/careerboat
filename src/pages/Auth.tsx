@@ -93,7 +93,7 @@ const Auth = () => {
           <div className="flex justify-center mb-4">
             <Brain className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Welcome to CareerPath AI</CardTitle>
+          <CardTitle className="text-2xl">Welcome to CareerBoat</CardTitle>
           <CardDescription>Discover your ideal career path with AI-powered guidance</CardDescription>
         </CardHeader>
         <CardContent>
