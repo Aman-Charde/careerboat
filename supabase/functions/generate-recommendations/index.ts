@@ -19,6 +19,11 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Delete existing recommendations to generate fresh ones
+    await supabase.from("career_recommendations").delete().eq("user_id", user_id);
+    await supabase.from("skill_gaps").delete().eq("user_id", user_id);
+    await supabase.from("learning_paths").delete().eq("user_id", user_id);
+
     // Fetch test details to understand categories
     const testIds = attempts.map((a: any) => a.test_id);
     const { data: tests } = await supabase
