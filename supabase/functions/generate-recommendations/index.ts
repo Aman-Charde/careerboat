@@ -19,9 +19,27 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Fetch test details to understand categories
+    const testIds = attempts.map((a: any) => a.test_id);
+    const { data: tests } = await supabase
+      .from("aptitude_tests")
+      .select("id, title, category")
+      .in("id", testIds);
+
+    // Build detailed test performance summary
+    const testPerformance = attempts.map((a: any) => {
+      const test = tests?.find((t) => t.id === a.test_id);
+      return `${test?.title} (${test?.category}): ${a.percentage}%`;
+    }).join(", ");
+
     const avgScore = attempts.reduce((sum: number, a: any) => sum + Number(a.percentage), 0) / attempts.length;
     
-    const prompt = `Analyze aptitude test results and recommend 3 careers. Average score: ${avgScore}%. Return recommendations with confidence scores (0-100), required skills array, salary range, and growth potential.`;
+    const prompt = `Analyze these aptitude test results and recommend 5 diverse career paths:
+
+Test Performance: ${testPerformance}
+Average Score: ${avgScore}%
+
+Based on the specific test categories and scores, suggest 5 different career paths that match the user's strengths. Vary recommendations based on which tests scored highest. Consider technical skills, analytical thinking, and soft skills performance.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -32,41 +50,48 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "user", content: prompt }],
+        tools: [{
+          type: "function",
+          function: {
+            name: "recommend_careers",
+            description: "Return 5 career recommendations based on test results",
+            parameters: {
+              type: "object",
+              properties: {
+                careers: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      career_title: { type: "string" },
+                      description: { type: "string" },
+                      confidence_score: { type: "number", minimum: 0, maximum: 100 },
+                      required_skills: { type: "array", items: { type: "string" } },
+                      salary_range: { type: "string" },
+                      growth_potential: { type: "string", enum: ["Low", "Medium", "High", "Very High"] }
+                    },
+                    required: ["career_title", "description", "confidence_score", "required_skills", "salary_range", "growth_potential"]
+                  },
+                  minItems: 5,
+                  maxItems: 5
+                }
+              },
+              required: ["careers"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "recommend_careers" } }
       }),
     });
 
     const aiData = await aiResponse.json();
-    const content = aiData.choices[0].message.content;
+    const toolCall = aiData.choices[0].message.tool_calls?.[0];
+    const careerData = JSON.parse(toolCall.function.arguments);
 
-    const careers = [
-      {
-        user_id,
-        career_title: "Software Developer",
-        description: "Design and build applications using programming languages",
-        confidence_score: Math.min(95, avgScore + 10),
-        required_skills: ["JavaScript", "Python", "Problem Solving"],
-        salary_range: "$70k - $150k",
-        growth_potential: "High",
-      },
-      {
-        user_id,
-        career_title: "Data Analyst",
-        description: "Analyze data to help organizations make informed decisions",
-        confidence_score: Math.min(90, avgScore + 5),
-        required_skills: ["SQL", "Excel", "Statistics"],
-        salary_range: "$60k - $120k",
-        growth_potential: "Very High",
-      },
-      {
-        user_id,
-        career_title: "Project Manager",
-        description: "Lead teams and coordinate projects to successful completion",
-        confidence_score: Math.min(85, avgScore),
-        required_skills: ["Leadership", "Communication", "Planning"],
-        salary_range: "$75k - $130k",
-        growth_potential: "High",
-      },
-    ];
+    const careers = careerData.careers.map((career: any) => ({
+      user_id,
+      ...career
+    }));
 
     await supabase.from("career_recommendations").insert(careers);
 
