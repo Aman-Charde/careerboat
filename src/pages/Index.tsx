@@ -131,7 +131,7 @@ const Index = () => {
             Ready to Find Your Path?
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
-            Join thousands of professionals who've discovered their ideal career with CareerPath AI
+            Join thousands of professionals who've discovered their ideal career with CareerBoat
           </p>
           <Link to="/auth">
             <Button size="lg" className="text-lg px-12">
