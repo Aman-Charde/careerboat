@@ -1,14 +1,10 @@
-# Career Boat 
-Sure! Here is clean, ready-to-paste **README.md** content with proper Markdown formatting.
-Just copy–paste directly into your README.md file.
-
----
-
 # **Career Boat – AI Career Guidance System**
 
 Career Boat is an AI-powered career guidance platform designed to help students and professionals discover personalized career paths based on their skills, interests, academic background, and personality traits. The system leverages machine learning, intelligent recommendations, and an interactive AI chatbot to provide structured and meaningful career guidance.
 
 ---
+
+#Live Link - https://careerboat.lovable.app
 
 ## **🚀 Features**
 
